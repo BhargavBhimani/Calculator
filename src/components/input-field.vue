@@ -49,7 +49,7 @@ export default {
     data() {
         return {
             inputString: '',
-            result: 0,
+            result: '',
         }
     },
     components: {
@@ -76,15 +76,14 @@ export default {
             this.inputString += value;
         },
         checkOperators() {
-            const regex = /[-+*/%.]{2,}/g;
+            const regex = /[-+*/%]{2,}/g;
             this.inputString = this.inputString.replace(regex, (match) => match[1]);
         },
         calculate() {
             try {
-                if (this.inputString.length > 0) {
+                if (this.inputString) {
                     const results = this.evaluateExpression(this.inputString);
                     this.result = results;
-                    // console.log(this.result);
                 }
                 else {
                     this.result = 0;
@@ -94,6 +93,16 @@ export default {
                 console.log(error);
             }
 
+            // if (!this.inputString) {
+            //     this.result = 'Input cannot be empty';
+            // }
+
+            // // Check if the input string contains any invalid characters. If it does, display an error message to the user.
+            // const invalidCharacters = /[^0-9\+\-\*\/\(\)]/g;
+            // if (invalidCharacters.test(this.inputString)) {
+            //     this.result = 'Invalid characters in input';
+            // }
+
         },
         evaluateExpression(expression) {
             let postfixTokens = this.precedenceLevel(expression);
@@ -102,7 +111,7 @@ export default {
 
             for (let token of postfixTokens) {
                 // console.log(token);
-                if (parseFloat(token)) {
+                if (!isNaN(parseFloat(token))) {
                     // console.log(token);
                     stack.push(parseFloat(token));
                     // console.log(parseFloat(token));
@@ -112,6 +121,9 @@ export default {
                     let leftOperand = stack.pop();
                     // console.log(leftOperand);
                     // console.log(rightOperand);
+                    if (isNaN(leftOperand)) {
+                        leftOperand = 0;
+                    }
                     stack.push(this.evaluateOperation(leftOperand, rightOperand, token));
                 }
             }
@@ -119,11 +131,12 @@ export default {
         },
         precedenceLevel(expression) {
             const precedence = {
-                '+': 1,
-                '-': 1,
-                '*': 2,
-                '/': 2,
-                '%': 2
+                '+': 2,
+                '-': 2,
+                '*': 3,
+                '/': 3,
+                '%': 3,
+                '0': 1
             };
 
             let outputQueue = [];
@@ -133,7 +146,7 @@ export default {
             // let tokens = expression.match(/(\d+(\.\d+)?|-?\d+(\.\d+)?|\+|\-|\*|\/|\(|\)|\%)/g);
 
             for (let token of tokens) {
-                if (parseFloat(token)) {
+                if (!isNaN(parseFloat(token))) {
                     // console.log(token);
                     outputQueue.push(token);
                     // console.log(outputQueue);
@@ -170,7 +183,6 @@ export default {
             return outputQueue;
         },
         evaluateOperation(leftOperand, rightOperand, operator) {
-
             switch (operator) {
                 case '+':
                     return leftOperand + rightOperand;
@@ -185,36 +197,44 @@ export default {
                 default:
                     throw Error('Invalid operator: ' + operator);
             }
+            // }
         },
         checkFirstInput() {
-            if (/[0-9\(\)\[\]-]/.test(this.inputString)) {
-                this.result = ''
+            if (this.inputString.charAt(0) == '.') {
+                this.inputString = '0.' + this.inputString.substring(1);
             }
-            else {
+            if (/[0-9\(\)\[\]\.\-]/.test(this.inputString)) {
+                this.result = '';
+            } else {
                 this.inputString = this.inputString.slice(0, -1);
             }
         },
         checkInput() {
-            this.inputString = this.inputString.trim()
-            let pattern = /(\d+(\.\d+)?|\.|\+|\-|\*|\/|\%|\^|\(|\))/g;
+            this.inputString = this.inputString.trim();
+            let pattern = /(\d+(\.\d+)?|\+|\-|\*|\/|\%|\^|\(|\)|\.)|([+\-*/%])\./g;
             let res = this.inputString.match(pattern);
             if (res != null) {
-                this.inputString = res.join('');
-                // console.log(res);
+                this.inputString = res.map((match, index) => {
+                    if (match === '.' && index > 0 && "+-*/%".includes(res[index - 1])) {
+                        return '0.';
+                    }
+                    else if (match === '.' && index < res.length - 1 && /\d/.test(res[index + 1])) {
+                        // Add a digit after the '.' if it's missing
+                        return match + '0';
+                    }
+                    return match;
+                }).join('');
+            } else {
+                this.clearInput();
             }
-            else {
-                this.clearInput()
-                // console.log('cleared input ');
-            }
-        },
+        }
+
+        ,
         clearInput() {
             this.inputString = '';
-            this.result = 0;
+            this.result = '';
         },
         clearLast() {
-            // this.inputString = this.inputString.slice(0, -1);
-            // const cursorPosition = 
-
             const inputField = document.getElementById('inputField')
             let cursorPosition = inputField.selectionStart;
             if (cursorPosition > 0) {
