@@ -5,16 +5,12 @@
 </template>
 
 <script>
-import TheButton from "./components/the-button.vue";
+
 import InputField from "./components/input-field.vue";
-import Keypad from "./components/keypad.vue";
 
 export default {
   components: {
-    TheButton,
     InputField,
-    Keypad,
-
   },
 };
 </script>
